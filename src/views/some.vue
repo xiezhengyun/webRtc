@@ -179,12 +179,15 @@ export default {
           for (const key in this.peerList) {
             if (key.split('-').includes(account)) {
               const stream = this.shareing ? this.shareStream : this.localStream
-              this.peerList[key].removeStream(!this.shareing ? this.shareStream : this.localStream)
-              this.peerList[key].addStream(stream)
-              // this.peerList[key].removeTrack(this.peerList[key].sender)
-              // stream.getTracks().forEach(track => {
-              //   this.peerList[key].sender = this.peerList[key].addTrack(track, stream)
-              // })
+              // this.peerList[key].removeStream(!this.shareing ? this.shareStream : this.localStream)
+              // this.peerList[key].addStream(stream)
+              Array.isArray(this.peerList[key].sender) && this.peerList[key].sender.forEach(item => {
+                this.peerList[key].removeTrack(item)
+              })
+              this.peerList[key].sender = []
+              stream.getTracks().forEach(track => {
+                this.peerList[key].sender.push(this.peerList[key].addTrack(track, stream)) 
+              })
             }
           }
         }
@@ -275,8 +278,9 @@ export default {
       if (stream) {
         console.log('添加本地流')
         // peer.addStream(stream)
+        peer.sender = []
         stream.getTracks().forEach(track => {
-          peer.sender = peer.addTrack(track, stream)
+          peer.sender.push(peer.addTrack(track, stream))
         })
       } else {
         console.log('没有添加本地流')
@@ -297,12 +301,12 @@ export default {
 
       //如果检测到媒体流连接到本地，将其绑定到一个video标签上输出
       //   onaddstream ontrack
-      peer.onaddstream = function(event) {
+      peer.ontrack = function(event) {
         // console.log('event-stream', event);
         self.addInfoList(`我接受到了${v.account}的流`)
         let nodes = document.getElementById('videoId').getElementsByTagName('video')
         console.log('获取节点')
-        const streams = event.stream //event.streams[0]
+        const streams = event.streams[0] //event.streams[0]
         if (self.streamList.find(item => item.name === v.account)) {
           const index = self.streamList.findIndex(item => item.name === v.account)
           self.streamList[index].stream = streams
